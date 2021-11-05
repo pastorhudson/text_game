@@ -27,7 +27,7 @@ cant_pay = ["Nice Try buddy. . . \n",
 
 
 def clear():
-    os.system('cls' if os.name=='nt' else 'clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 def intro():
@@ -41,12 +41,17 @@ def new_character():
     character = {
         "hp": 100,
         "max_hp": 100,
+        "mp": 10,
+        "max_mp": 10,
         "gold": 100,
         "level": 1,
         "xp": 0,
         "base_attack": 1,
         "base_defense": 1,
         "name": name,
+        "spells": {
+            "heal": 6
+        }
     }
     return character
 
@@ -58,7 +63,7 @@ def go_to_inn(character, town, didnt_pay=0):
                '1. Stay for the night [50 gold]',
                '2. Exit Inn']
     print("\n".join(options))
-    print_stats()
+    print_stats(character)
     choices = int(input(f"\nWhat do we do here {character['name']}?: "))
     match choices:
         case 1:
@@ -152,7 +157,7 @@ def find_town(character, town=None):
                         f"You can see the sign for {town} in the distance. You're there before you know it.",
                         f"You take off running in no direction in particular. By sheer dumb luck you stumble upon {town}."]
     else:
-        observations = [f'You step into the familar street of {town}',
+        observations = [f'You step into the familiar street of {town}',
                         f"It's no Uniontown, but {town} has it's charm."]
     print("\n".join(["", random.choice(observations),
                      "",
@@ -201,9 +206,104 @@ def town_name():
     return " ".join([random.choice(first), random.choice(last)])
 
 
-def find_fight(character):
-    pprint(character)
-    return character
+def enemy_name():
+    first = ["Angry",
+             "Toxic",
+             "Pedantic",
+             "Abnormal",
+             "Fluffy",
+             "Cute",
+             "Tired"]
+    last = ["Bunny",
+            "Beaver",
+            "Bear",
+            "Walrus",
+            "Wolf",
+            "Mummy",
+            "Lizard",
+            ]
+    return f"{random.choice(first)} {random.choice(last)}"
+
+
+def get_enemy(character):
+    buff = random.randint(1, 10)
+    gold = random.randint(5, 100)
+    enemy = {
+        "hp": character['max_hp'] / 2 + buff,
+        "max_hp": character['max_hp'] / 2 + buff,
+        "gold": gold,
+        "level": 1,
+        "xp": character['max_hp'] / 2 + buff * .2,
+        "base_attack": character['level'],
+        "base_defense": 1,
+        "name": enemy_name(),
+    }
+    return enemy
+
+
+def attack(character, enemy):
+    character_attack_type = ['You summon ']
+    enemy_attack_type = []
+
+    # You [Random attack Name] and do X damage!
+
+    # The [Enemy Name] doesn't like that and [Random attack name] back for X Damage!
+
+    # If character dies
+
+    # Else if enemy dies
+
+    clear()
+    find_fight(character, enemy)
+    pass
+
+
+def heal(character, enemy):
+    if character['mp'] >= character['spells']['heal']:
+        character['hp'] = character['max_hp']
+        character['mp'] -= character['spells']['heal']
+        clear()
+        return find_fight(character, enemy)
+
+
+def find_fight(character, enemy=None):
+    if not enemy:
+        enemy = get_enemy(character)
+    observation = [f"You Kick the grass and a {enemy['name']} jumps out at you!",
+                   f"You head deep into the woods and a {enemy['name']} jumps from behind a tree!",
+                   f"A wild {enemy['name']} appears!",
+                   f"It doesn't take long before you're attacked by a {enemy['name']}!"]
+
+    print(f"\n{random.choice(observation)}\n")
+    print("\n".join([f"{enemy['name']} Stats:\n",
+                     f"- HP: {enemy['hp']}",
+                     f"- Gold: {enemy['gold']}",
+                     f"",
+                     ]))
+
+    print("\n".join(["",
+                     "1. Attack!",
+                     "2. Heal [6mp]",
+                     "3. Flee",
+                     "",
+                     ]))
+    print_stats(character)
+    choice = int(input(f"What do you want to do {character['name']}?: "))
+
+    match choice:
+        case 1:
+            attack(character, enemy)
+            pass
+        case 2:
+            heal(character, enemy)
+            pass
+        case 3:
+            pass
+        case _:
+            find_fight(character, enemy)
+
+
+    main_menu(character)
 
 
 def take_nap(character):
@@ -255,7 +355,7 @@ def print_stats(character, **kwargs):
             for key, value in character.items():
                 print(f"{key.upper()} - {value}")
     except KeyError:
-        print(f"[LV {character['level']}] [HP {character['hp']}] [{character['gold']}g]")
+        print(f"[LV {character['level']}] [HP {character['hp']}] [MP {character['mp']}] [{character['gold']}g]")
 
 
 if __name__ == '__main__':
