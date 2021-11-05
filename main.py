@@ -2,6 +2,8 @@ from pprint import pprint
 import random
 import os
 import time
+from colorama import init
+from colorama import Fore, Back, Style
 
 
 # define the countdown func.
@@ -33,11 +35,12 @@ def clear():
 def intro():
     clear()
     # Use a breakpoint in the code line below to debug your script.
-    print("""\nWelcome To Adventure Land.\nYou're not sure how you got here, but you do remember your name.""")  # Press Ctrl+F8 to toggle the breakpoint.
+    print(Fore.MAGENTA + """\nWelcome To Adventure Land.\nYou're not sure how you got here, but you do remember your name.""")  # Press Ctrl+F8 to toggle the breakpoint.
 
 
 def new_character():
-    name = input("\nWhat is your name?: ")
+    name = input(Fore.BLUE + "\nWhat is your name?: ")
+
     character = {
         "hp": 100,
         "max_hp": 100,
@@ -46,7 +49,7 @@ def new_character():
         "gold": 100,
         "level": 1,
         "xp": 0,
-        "base_attack": 1,
+        "base_attack": 10,
         "base_defense": 1,
         "name": name,
         "spells": {
@@ -69,6 +72,7 @@ def go_to_inn(character, town, didnt_pay=0):
         case 1:
             if character['gold'] > 49:
                 character['hp'] = character['max_hp']
+                character['mp'] = character['max_mp']
                 character['gold'] -= 50
                 clear()
                 print("You feel refreshed and ready to face the day!")
@@ -98,7 +102,10 @@ def go_to_shop(character, town, didnt_pay=0):
                '']
     print_stats(character, extended=True)
     print("\n".join(options))
-    choice = int(input(f"What Do you want to do? [{character['gold']}G]: "))
+    try:
+        choice = int(input(Fore.BLUE + f"What Do you want to do? [{character['gold']}G]: "))
+    except ValueError:
+        choice = None
     match choice:
         case 1:
             clear()
@@ -159,18 +166,18 @@ def find_town(character, town=None):
     else:
         observations = [f'You step into the familiar street of {town}',
                         f"It's no Uniontown, but {town} has it's charm."]
-    print("\n".join(["", random.choice(observations),
-                     "",
+    print("\n".join(["",Fore.MAGENTA + random.choice(observations),
+                    Fore.LIGHTWHITE_EX + "",
                      "1. Head to the shop.",
                      "2. Go to the Inn",
                      "3. Leave Town",
-                     "",
+                     Fore.RESET + "",
                      ]
                     )
           )
     print_stats(character)
     try:
-        choice = int(input(f"What Do you want to do {character['name']}?: "))
+        choice = int(input(Fore.BLUE + f"What Do you want to do {character['name']}?: "))
     except ValueError:
         choice = None
     match choice:
@@ -229,21 +236,33 @@ def get_enemy(character):
     buff = random.randint(1, 10)
     gold = random.randint(5, 100)
     enemy = {
-        "hp": character['max_hp'] / 2 + buff,
+        "hp": int(character['max_hp'] / 2 + buff),
         "max_hp": character['max_hp'] / 2 + buff,
         "gold": gold,
         "level": 1,
         "xp": character['max_hp'] / 2 + buff * .2,
-        "base_attack": character['level'],
+        "base_attack": buff,
         "base_defense": 1,
         "name": enemy_name(),
     }
     return enemy
 
 
+def level_up(character):
+    while character['xp'] > 99:
+        character['xp'] -= 100
+        character['level'] += 1
+        character['max_hp'] += random.randint(5, 10)
+        character['max_mp'] += random.randint(1, 4)
+        character['base_attack'] += random.randint(5, 10)
+        character['base_defense'] += random.randint(5, 10)
+
+        print("You Leveled UP!")
+
+
 def attack(character, enemy):
     character_attack_type = [f'You summon all of your courage and claw at {enemy["name"]}\'s eyes!',
-                             f'You lung at the {enemy["name"]} and kick it in the arm.',
+                             f'You lunge at the {enemy["name"]} and kick it in the arm.',
                              f'{enemy["name"]} is no match for your haymaker!',
                              f'You faint toward {enemy["name"]}\'s left and ruthlessly sweep the leg!',
                              f'POCKET SAND!!!']
@@ -254,26 +273,28 @@ def attack(character, enemy):
                          f'{enemy["name"]} tells you a cringy dad joke!']
 
     # You [Random attack Name] and do X damage!
-    print(random.choice(character_attack_type))
-    print(f'For {character["base_attack"]} damage!')
+    clear()
+    print(Fore.MAGENTA + random.choice(character_attack_type))
+    print(Fore.LIGHTRED_EX + f'For {character["base_attack"]} damage!\n')
+    print(Fore.MAGENTA)
     enemy['hp'] -= character['base_attack']
     if enemy['hp'] < 1:
         """You Killed The Enemy"""
         print(f'You Defeated the {enemy["name"]}!')
-        print(f"You receive {enemy['max_hp'] / 3}, {enemy['gold']} Gold")
-        character['xp'] += enemy['max_hp'] / 3
+        print(f"You receive {int(enemy['max_hp'] / 3)} XP, {enemy['gold']} Gold")
+        character['xp'] += int(enemy['max_hp'] / 3)
         character['gold'] += enemy['gold']
-        clear()
-        main_menu(character)
+        level_up(character)
+        main_menu(character, draw_clear=False)
 
     # The [Enemy Name] doesn't like that and [Random attack name] back for X Damage!
     print(random.choice(enemy_attack_type))
-    print(f'For {enemy["base_attack"]} damage!')
+    print(Fore.LIGHTRED_EX + f'For {enemy["base_attack"]} damage!\n')
     character['hp'] -= enemy['base_attack']
     # If character dies
     if character['hp'] < 1:
         print("It just wasn't your day for adventuring. . . \n")
-        choices = int(input("Do you want to try again? <y,n> : "))
+        choices = input("Do you want to try again? <y,n> : ")
         match choices:
             case 'y':
                 start()
@@ -284,8 +305,7 @@ def attack(character, enemy):
                 print("You seem upset. . . we should probably quit for now.")
                 quit()
 
-    clear()
-    find_fight(character, enemy)
+    find_fight(character, enemy, new=False)
 
 
 def heal(character, enemy):
@@ -293,33 +313,40 @@ def heal(character, enemy):
         character['hp'] = character['max_hp']
         character['mp'] -= character['spells']['heal']
         clear()
-        return find_fight(character, enemy)
+        print(f"You heal yourself!")
+        find_fight(character, enemy, new=False)
+    else:
+        clear()
+        print("You wave your hand confidently shouting Abbra Kadabra!! But nothing happens. . .")
+        find_fight(character, enemy, new=False)
 
 
-def find_fight(character, enemy=None):
+def find_fight(character, enemy=None, new=True):
     if not enemy:
         enemy = get_enemy(character)
     observation = [f"You Kick the grass and a {enemy['name']} jumps out at you!",
                    f"You head deep into the woods and a {enemy['name']} jumps from behind a tree!",
                    f"A wild {enemy['name']} appears!",
                    f"It doesn't take long before you're attacked by a {enemy['name']}!"]
-
-    print(f"\n{random.choice(observation)}\n")
-    print("\n".join([f"{enemy['name']} Stats:\n",
-                     f"- HP: {enemy['hp']}",
-                     f"- Gold: {enemy['gold']}",
-                     f"",
+    if new:
+        print(Fore.MAGENTA + f"\n{random.choice(observation)}\n")
+    print("\n".join([Fore.MAGENTA + f"{enemy['name']} Stats:\n",
+                     Fore.LIGHTGREEN_EX + f"- HP: {enemy['hp']}",
+                     Fore.LIGHTYELLOW_EX + f"- Gold: {enemy['gold']}",
+                     Fore.RESET + f"",
                      ]))
 
     print("\n".join(["",
-                     "1. Attack!",
-                     "2. Heal [6mp]",
-                     "3. Flee",
+                     Fore.RED + "1. Attack!",
+                     Fore.GREEN + "2. Heal [6mp]",
+                     Fore.YELLOW + "3. Flee",
                      "",
                      ]))
     print_stats(character)
-    choice = int(input(f"What do you want to do {character['name']}?: "))
-
+    try:
+        choice = int(input(Fore.BLUE + f"What do you want to do {character['name']}?: "))
+    except ValueError:
+        choice = None
     match choice:
         case 1:
             attack(character, enemy)
@@ -328,37 +355,49 @@ def find_fight(character, enemy=None):
             heal(character, enemy)
             pass
         case 3:
-            pass
+            clear()
+            print('\nYou tuck tail and run. . . bringing shame upon your family name.')
+            character['name'] += " The Coward"
+            main_menu(character, draw_clear=False)
         case _:
-            find_fight(character, enemy)
+            clear()
+            print("\n")
+            print(random.choice(bad_entry), "\n")
+            find_fight(character, enemy, new=False)
 
 
     main_menu(character)
 
 
 def take_nap(character):
-    pprint(character)
-    return character
-
-
-def main_menu(character):
+    observation = ['You find a shade tree and close your eyes for a second.',
+                   'You collapse from exhaustion in middle of the road and don\'t even care.',
+                   'Shouldn\'t you find an inn?']
     clear()
+    print(Fore.MAGENTA + random.choice(observation))
+    print(Fore.RESET)
+    main_menu(character, draw_clear=False)
+
+
+def main_menu(character, draw_clear=True):
+    if draw_clear:
+        clear()
     observations = ["You find yourself on a dusty road. It doesn't look like there's much around.",
                     "You look up and see the sky grow dark. It's probably going to rain.",
                     "The sun is high in the sky, and it looks like a great day for adventure!",
                     "You can feel a bit of a pain in your stomach. Adventuring is hard work."]
-    print("\n".join(["", random.choice(observations),
-                     "",
+    print("\n".join(["", Fore.MAGENTA + random.choice(observations),
+                     Fore.LIGHTWHITE_EX + "",
                      "1. Look for a town.",
                      "2. Find something to kill!",
                      "3. Take a nap",
-                     "",
+                     Fore.RESET + "",
                      ]
                     )
           )
     print_stats(character)
     try:
-        choice = int(input(f"What Do you want to do {character['name']}?: "))
+        choice = int(input(Fore.BLUE + f"What Do you want to do {character['name']}?: "))
     except ValueError:
         choice = None
     match choice:
@@ -375,7 +414,7 @@ def main_menu(character):
             clear()
             print("\n")
             print(random.choice(bad_entry), "\n")
-            main_menu(character)
+            main_menu(character, draw_clear=False)
 
 
 def print_stats(character, **kwargs):
@@ -385,12 +424,16 @@ def print_stats(character, **kwargs):
             for key, value in character.items():
                 print(f"{key.upper()} - {value}")
     except KeyError:
-        print(f"[LV {character['level']}] [HP {character['hp']}] [MP {character['mp']}] [{character['gold']}g]")
+        print(Fore.CYAN + f"[LV {character['level']}] [XP {character['xp']}/100] [HP {character['hp']}] [MP {character['mp']}] [{character['gold']}g]")
+        print(Fore.RESET)
+
 
 def start():
+    init()  # Initilize Colorama
     intro()
     character = new_character()
     main_menu(character)
+
 
 if __name__ == '__main__':
     start()
