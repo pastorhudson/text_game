@@ -242,20 +242,50 @@ def get_enemy(character):
 
 
 def attack(character, enemy):
-    character_attack_type = ['You summon ']
-    enemy_attack_type = []
+    character_attack_type = [f'You summon all of your courage and claw at {enemy["name"]}\'s eyes!',
+                             f'You lung at the {enemy["name"]} and kick it in the arm.',
+                             f'{enemy["name"]} is no match for your haymaker!',
+                             f'You faint toward {enemy["name"]}\'s left and ruthlessly sweep the leg!',
+                             f'POCKET SAND!!!']
+    enemy_attack_type = [f'{enemy["name"]} spits in your eye!',
+                         f'{enemy["name"]} lets out a blood curdling shriek and stomps on your toe!',
+                         f'{enemy["name"]} pulls your hair!',
+                         f'{enemy["name"]} walks slowly in front of the tv enraging you!',
+                         f'{enemy["name"]} tells you a cringy dad joke!']
 
     # You [Random attack Name] and do X damage!
+    print(random.choice(character_attack_type))
+    print(f'For {character["base_attack"]} damage!')
+    enemy['hp'] -= character['base_attack']
+    if enemy['hp'] < 1:
+        """You Killed The Enemy"""
+        print(f'You Defeated the {enemy["name"]}!')
+        print(f"You receive {enemy['max_hp'] / 3}, {enemy['gold']} Gold")
+        character['xp'] += enemy['max_hp'] / 3
+        character['gold'] += enemy['gold']
+        clear()
+        main_menu(character)
 
     # The [Enemy Name] doesn't like that and [Random attack name] back for X Damage!
-
+    print(random.choice(enemy_attack_type))
+    print(f'For {enemy["base_attack"]} damage!')
+    character['hp'] -= enemy['base_attack']
     # If character dies
-
-    # Else if enemy dies
+    if character['hp'] < 1:
+        print("It just wasn't your day for adventuring. . . \n")
+        choices = int(input("Do you want to try again? <y,n> : "))
+        match choices:
+            case 'y':
+                start()
+            case 'n':
+                print("Thanks for playing!")
+                quit()
+            case _:
+                print("You seem upset. . . we should probably quit for now.")
+                quit()
 
     clear()
     find_fight(character, enemy)
-    pass
 
 
 def heal(character, enemy):
@@ -357,9 +387,10 @@ def print_stats(character, **kwargs):
     except KeyError:
         print(f"[LV {character['level']}] [HP {character['hp']}] [MP {character['mp']}] [{character['gold']}g]")
 
-
-if __name__ == '__main__':
+def start():
     intro()
     character = new_character()
     main_menu(character)
-    print_stats(character, extended=True)
+
+if __name__ == '__main__':
+    start()
